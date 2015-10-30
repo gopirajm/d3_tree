@@ -101,7 +101,7 @@
 							.append("g")
 							.classed("node", true)
 							.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
-								
+							
 				node.append("rect")
 				.attr("width", 50)
 				.attr("height", 60)
@@ -127,7 +127,7 @@
 				
 				node.append("text")
 				.text(function(d) { return d.life;})
-				.attr("transform", "translate(25,75)")
+				.attr("transform", "translate(25,75)");
 			});
 		</script>
 	</body>
