@@ -4,33 +4,8 @@
 		<meta charset="UTF-8">
 		<title>D3 Demo Page</title>
 		<style type="text/css">
-			/*div.bar {
+			.node {
 				display: inline-block;
-				width: 20px;
-				height: 75px;   /* We'll override this later */
-				background-color: teal;
-				margin-right: 2px;
-			}
-			.axis path,
-			.axis line {
-				fill: none;
-				stroke: black;
-				shape-rendering: crispEdges;
-			}
-			.axis text {
-				font-family: sans-serif;
-				font-size: 11px;
-			}*/
-			.svg-content-responsive {
-				display: inline-block;
-				position: absolute;
-				top: 10px;
-				left: 0;
-				padding: 10px;
-			}
-			rect {
-				z-index: 10;
-				position: absolute;
 			}
 			.name-text {
 				font-size: 10px;
@@ -38,15 +13,42 @@
 			text {
 				font-size: 8px;
 			}
-			
-			.node {
-				display: inline-block;
+			#overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: #000;
+				filter:alpha(opacity=50);
+				-moz-opacity:0.5;
+				-khtml-opacity: 0.5;
+				opacity: 0.75;
+				z-index: 10000;
 			}
-			.rect-div {
-				background: #ccc;
-				width: 65px;
-				height: 70px;
-				margin: 10px;
+			#overlay label {
+				width: 30%;
+				display: inline-block;
+				font-size: 18px;
+			}
+			.container {
+				color: #fff !important;
+			    width: 20%;
+				border: 1px solid #fff;
+				padding: 15px;
+				position: absolute;
+				top: 150px;
+				left: 450px;
+			}
+			.node-input {
+				margin: 10px 5px;
+			}
+			#node-add {
+				display: block;
+				margin: 0 auto;
+			}
+			.add-link {
+				cursor: pointer;
 			}
 		</style>
 	</head>
@@ -54,284 +56,218 @@
 		<h3>Sample Family Tree</h3>
 		<div class="svg-container"></div>
 		<script type="text/javascript" src="d3.min.js"></script>
+		<script type="text/javascript" src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
 		<script type="text/javascript">
-			//define svg
-				var w = 900;
-				h = 900;
+			var w = 900,
+				h = 900,
+				c = 0;
+			var data = {
+				"name": "William",
+				"gender": "m",
+				"life": "1900-1980"
+			};
+			drawTree(data);
+			function drawTree(data){
+			c++;
+			var tree = d3.layout.tree().size([700, 400]);
+			var nodes = tree.nodes(data);
+			var links = tree.links(nodes);
 				
-				var tree = d3.layout.tree().size([400, 400]);
-				d3.json("familyData.json", function(data) {
-					var nodes = tree.nodes(data);
-					var links = tree.links(nodes);
-					
-					/*var svgcon = d3.select(".svg-container").append("div")
-							.classed("svg-content-responsive", true);
-					
-					
-					var node = svgcon.selectAll(".nodes")
-								.data(nodes)
-								.enter()
-								.append("div")
-								.attr("class", "node")
-								.attr("style", function (d) { return "transform: translate(" + d.x + "px, " + d.y + "px)"});
-								
-					
-					node.append("div").classed("rect-div", true);
-					node.append("p").html(function(d) {return d.name;}); */
-					
-					var svgcon = d3.select(".svg-container").append("svg")
-							.attr("preserveAspectRatio", "xMinYMin meet")
-							.attr("viewBox", "0 0 "+w+" "+h)
-							.classed("svg-content-responsive", true);
-					
-					svgcon.selectAll(".link-s")
-					.data(links)
-					.enter()
-					.append("line")
-					.attr("x1", function(d) { return d.source.x; })
-					.attr("y1", function(d) { return d.source.y; })
-					.attr("x2", function(d) { return (d.source.x); })
-					.attr("y2", function(d) { return (d.source.y)+30; })
-					.classed("link-s", true)
-					.attr("stroke", "#777")
-					.attr("transform", "translate(40, 80)");
-					
-					svgcon.selectAll(".link")
-					.data(links)
-					.enter()
-					.append("line")
-					.attr("x1", function(d) { return (d.source.x); })
-					.attr("y1", function(d) { return (d.source.y)+30; })
-					.attr("x2", function(d) { return d.target.x; })
-					.attr("y2", function(d) { return d.target.y; })
-					.classed("link", true)
-					.attr("stroke", "#777")
-					.attr("transform", "translate(40, 80)");
-					
-					var node = svgcon.selectAll(".nodes")
-								.data(nodes)
-								.enter()
-								.append("g")
-								.classed("node", true)
-								.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
-									
-					node.append("rect")
-					.attr("width", 50)
-					.attr("height", 60)
-					.attr("x", 20)
-					.attr("y", 20)
-					.attr("fill", "#eeebe4")
-					.attr("onclick", "alert('asd')");
-											
-					
-					node.append("svg:image")
-					.attr('x', 30)
-					.attr('y', 25)
-					.attr('width', 30)
-					.attr('height', 30)
-					.attr("xlink:href", function(d) {
-						if(d.gender == "m") 
-							return "icon_male.png";
-						else return "icon_female.png";
-					});
-					
-					node.append("text")
-					.text(function(d) { return d.name;})
-					.attr("transform", "translate(25,65)")
-					.classed("name-text", true);
-					
-					node.append("text")
-					.text(function(d) { return d.life;})
-					.attr("transform", "translate(25,75)")
+			var svgcon = d3.select(".svg-container").append("svg")
+					.attr("preserveAspectRatio", "xMinYMin meet")
+					.attr("viewBox", "0 0 "+w+" "+h)
+					.classed("svg-content-responsive", true);
+			
+			svgcon.selectAll(".link-s")
+			.data(links)
+			.enter()
+			.append("line")
+			.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+			.attr("x2", function(d) { return (d.source.x); })
+			.attr("y2", function(d) { return (d.source.y)+30; })
+			.classed("link-s", true)
+			.attr("stroke", "#777")
+			.attr("transform", "translate(40, 80)");
+			
+			svgcon.selectAll(".link")
+			.data(links)
+			.enter()
+			.append("line")
+			.attr("x1", function(d) { return (d.source.x); })
+			.attr("y1", function(d) { return (d.source.y)+30; })
+			.attr("x2", function(d) { return d.target.x; })
+			.attr("y2", function(d) { return d.target.y; })
+			.classed("link", true)
+			.attr("stroke", "#777")
+			.attr("transform", "translate(40, 80)");
+			
+			var node = svgcon.selectAll(".nodes")
+						.data(nodes)
+						.enter()
+						.append("g")
+						.classed("node", true)
+						.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
+							
+			node.append("rect")
+			.attr("width", 50)
+			.attr("height", 75)
+			.attr("x", 20)
+			.attr("y", 20)
+			.attr("fill", "#eeebe4");
+			
+			node.append("svg:image")
+			.attr('x', 30)
+			.attr('y', 25)
+			.attr('width', 30)
+			.attr('height', 30)
+			.attr("xlink:href", function(d) {
+				if(d.gender == "m") 
+					return "icon_male.png";
+				else return "icon_female.png";
+			});
+			
+			node.append("text")
+			.text(function(d) { return d.name;})
+			.attr("transform", "translate(25,65)")
+			.classed("name-text", true);
+			
+			node.append("text")
+			.text(function(d) { return d.life;})
+			.attr("transform", "translate(25,75)");
+			
+			node.append("text")
+			.text("Add + ")
+			.attr("transform", "translate(25,90)")
+			.attr("id", c)
+			.classed("add-link", true)
+			.on("click", function(d) { //alert($(this).attr("id"));
+				var overlay = $('<div id="overlay"><div class="container"><h2 align = "center"></h2><div class="node-input"><label for="node-name">Name: </label><input type="text" id = "node-name"/></div><div class="node-input"><label for="node-life">Life: </label><input type="text" id = "node-life"/></div><div class="node-input"><label for="node-gender">Gender: </label><input type="radio" name = "node-gender" id = "node-male" value = "m"/>Male<input type="radio" name = "node-gender" id = "node-female" value = "f"/>Female</div><div class="node-input"><input type="submit" id = "node-add"/></div></div></div>');
+				
+				$("body").append(overlay);
+				
+				$("#overlay h2").text("Add Child to " + d.name);
+				
+				$('#overlay').on('click',function() {
+					$('#overlay, .container').remove();
 				});
 				
+				$('.container').on('click',function(e) {
+					e.stopPropagation();
+				});
 				
-				
-				
-				
-				
-				
-							
-				/*rects = svgcon.append("rect")
-							  .attr("x", w/3)
-							  .attr("y", 0)
-							  .attr("width", 50)
-							  .attr("height", 60)
-							  .attr("fill", "red");
-							  
-				//calculate number of children and then divide width of total container. here n = 3
-				
-				for(var i = 0; i<3; i++) { console.log(cx);
-					rects = svgcon.append("rect")
-							  .attr("x", cx)
-							  .attr("y", rh + pad)
-							  .attr("width", 50)
-							  .attr("height", 60)
-							  .attr("fill", "red");
+				$("#node-add").on("click", function() {
+					//console.log(d);
+					var name = $("#node-name").val();
+					var life = $("#node-life").val();
+					var gen = $(".node-input input[type='radio']:checked").val();
+					//var arr = data.toArray();
 					
-					if(cx == offsetw) {
-						lines = svgcon.append("line")
-							.attr("x1", cx + rw/2)
-							.attr("y1", rh + pad )
-							.attr("x2", cx + rw/2)
-							.attr("y2", rh)
-							.attr("stroke", "green")
-							.attr("stroke-width", 2);
+					if(typeof data.children == "undefined"){
+						data.children = [];
 					}
-					
-					else {
-						lines = svgcon.append("line")
-							.attr("x1", cx + rw/2)
-							.attr("y1", rh + pad )
-							.attr("x2", offsetw + rw/2)
-							.attr("y2", rh)
-							.attr("stroke", "green")
-							.attr("stroke-width", 2);
-					}
-					
-					cx = cx + offsetw;
-				}
+					data.children.push({ "name": name, "life": life, "gender": gen});
+					console.log(data);
+					$('.svg-container').empty();
+					drawTree(data);
+					//console.log("asd" +JSON.parse(JSON.stringify(data)));
+				})
 				
-
-			/*var dataset;
-			
-			d3.json("familyData.json", function(error, data) {
-				if(error)
-					alert("File not found");
-				else{
-					dataset = data;
-					plotTree(dataset);
-				}
-					
+				console.log(d);
 			});
-			function plotTree(dataset) {
-				//define svg
-				var w = 900;
-				var h = 900;
-				var x = 10;
+		}	
+			/*d3.json("family.json", function(data) {
+				var nodes = tree.nodes(data);
+				var links = tree.links(nodes);
+				
 				var svgcon = d3.select(".svg-container").append("svg")
-							.attr("preserveAspectRatio", "xMinYMin meet")
-							.attr("viewBox", "0 0 "+w+" "+h)
-							.classed("svg-content-responsive", true);
-				var circles = svgcon.selectAll("circle")
-									.data(dataset.name)
-									.enter()
-									.append("circle");
-									
-				var cirlceAttr = circles.attr("cx", function(d) {
-									console.log(d);
-									console.log(dataset);
-								})
-								.attr("cy", function(d) {
-									x = x+10;
-									return h-x;
-								}).
-								attr("r", 5);
-			}
-			/*The data for our line
-			var lineData = [ { "x": 1,   "y": 5},  { "x": 20,  "y": 20},
-							 { "x": 40,  "y": 10}, { "x": 60,  "y": 40},
-							 { "x": 80,  "y": 5},  { "x": 100, "y": 60}];
-
-			//This is the accessor function we talked about above
-			var lineFunction = d3.svg.line()
-									 .x(function(d) { return d.x; })
-									 .y(function(d) { return d.y; })
-									 .interpolate("linear");
-
-			//The SVG Container
-			var svgContainer = d3.select("body").append("svg")
-												.attr("width", 200)
-												.attr("height", 200);
-
-			//The line SVG Path we draw
-			var lineGraph = svgContainer.append("path")
-									    .attr("d", lineFunction(lineData))
-										.attr("stroke", "blue")
-										.attr("stroke-width", 2)
-										.attr("fill", "none"); */
-			/*var dataset = [];
-			for(var i = 0; i<25; i++) {
-				var newNumber = Math.round(Math.random() * 30);
-				dataset.push(newNumber);
-			} 
-			var dataset = [
-                  [ 5,     20 ],
-                  [ 480,   90 ],
-                  [ 250,   50 ],
-                  [ 100,   33 ],
-                  [ 330,   95 ],
-                  [ 410,   12 ],
-                  [ 475,   44 ],
-                  [ 25,    67 ],
-                  [ 85,    21 ],
-				  [ 600,    98 ],
-                  [ 220,   88 ]
-            ];
-			//Width and height
-			var w = 500;
-			var h = 400;
-			var padding = 20;
-			var xScale = d3.scale.linear()
-                     .domain([0, d3.max(dataset, function(d) { return d[0]; })])
-                     .range([padding, w - padding * 2]);
-			var yScale = d3.scale.linear()
-                     .domain([0, d3.max(dataset, function(d) { return d[1]; })])
-                     .range([h - padding, padding]);
-			var rScale = d3.scale.linear()
-					 .domain([0, d3.max(dataset, function(d) { return d[1]; })])
-					 .range([5, 10]);
-			var xAxis = d3.svg.axis()
-						.scale(xScale)
-						.orient("bottom")
-						.ticks(5);
-			var yAxis = d3.svg.axis()
-						.scale(yScale)
-						.orient("left")
-						.ticks(5);
+						.attr("preserveAspectRatio", "xMinYMin meet")
+						.attr("viewBox", "0 0 "+w+" "+h)
+						.classed("svg-content-responsive", true);
+				
+				svgcon.selectAll(".link-s")
+				.data(links)
+				.enter()
+				.append("line")
+				.attr("x1", function(d) { return d.source.x; })
+				.attr("y1", function(d) { return d.source.y; })
+				.attr("x2", function(d) { return (d.source.x); })
+				.attr("y2", function(d) { return (d.source.y)+30; })
+				.classed("link-s", true)
+				.attr("stroke", "#777")
+				.attr("transform", "translate(40, 80)");
+				
+				svgcon.selectAll(".link")
+				.data(links)
+				.enter()
+				.append("line")
+				.attr("x1", function(d) { return (d.source.x); })
+				.attr("y1", function(d) { return (d.source.y)+30; })
+				.attr("x2", function(d) { return d.target.x; })
+				.attr("y2", function(d) { return d.target.y; })
+				.classed("link", true)
+				.attr("stroke", "#777")
+				.attr("transform", "translate(40, 80)");
+				
+				var node = svgcon.selectAll(".nodes")
+							.data(nodes)
+							.enter()
+							.append("g")
+							.classed("node", true)
+							.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
+								
+				node.append("rect")
+				.attr("width", 50)
+				.attr("height", 60)
+				.attr("x", 20)
+				.attr("y", 20)
+				.attr("fill", "#eeebe4");
+				
+				node.on("click", function(d) {
+					var overlay = $('<div id="overlay"><div class="container"><h2 align = "center"></h2><div class="node-input"><label for="node-name">Name: </label><input type="text" id = "node-name"/></div><div class="node-input"><label for="node-life">Life: </label><input type="text" id = "node-life"/></div><div class="node-input"><label for="node-gender">Gender: </label><input type="radio" name = "node-gender" id = "node-male" value = "m"/>Male<input type="radio" name = "node-gender" id = "node-female" value = "f"/>Female</div><div class="node-input"><input type="submit" id = "node-add"/></div></div></div>');
+					
+					$("body").append(overlay);
+					
+					$("#overlay h2").text("Add Child to " + d.name);
+					
+					$('#overlay').on('click',function() {
+						$('#overlay, .container').remove();
+					});
+					
+					$('.container').on('click',function(e) {
+						e.stopPropagation();
+					});
+					
+					$("#node-add").on("click", function() {
 						
-			var svg = d3.select("body")
-						.append("svg")
-						.attr("width", w)
-						.attr("height", h);
-			var circles = svg.selectAll("circle")
-							 .data(dataset)
-							 .enter()
-							 .append("circle");
-			circles.attr("cx", function(d) {
-				return  xScale(d[0]);
-			})
-			.attr("cy", function(d) {
-				return  yScale(d[1]);
-			})
-			.attr("r", function(d) {
-				return rScale(d[1]);
-			});
-			
-			var label = svg.selectAll("text")
-						.data(dataset)
-						.enter()
-						.append("text")
-						.text(function(d) {
-							return d[0] + "," + d[1];
-						})
-						.attr("x", function(d) {
-							return  xScale(d[0]);;
-					   })
-					   .attr("y", function(d) {
-							return  yScale(d[1]);;
-					   })
-					   .attr("font-family", "sans-serif")
-					   .attr("font-size", "11px")
-					   .attr("fill", "red");
-			var axisx = svg.append("g")
-						.attr("class", "axis")
-						.attr("transform", "translate(0," + (h - padding) + ")")
-						.call(xAxis);
-			var axisy = svg.append("g")
-						.attr("class", "axis")
-						.attr("transform", "translate("+ padding+ ", 0)")
-						.call(yAxis); */
+					
+					})
+					
+					console.log(d);
+				})
+				
+										
+				
+				node.append("svg:image")
+				.attr('x', 30)
+				.attr('y', 25)
+				.attr('width', 30)
+				.attr('height', 30)
+				.attr("xlink:href", function(d) {
+					if(d.gender == "m") 
+						return "icon_male.png";
+					else return "icon_female.png";
+				});
+				
+				node.append("text")
+				.text(function(d) { return d.name;})
+				.attr("transform", "translate(25,65)")
+				.classed("name-text", true);
+				
+				node.append("text")
+				.text(function(d) { return d.life;})
+				.attr("transform", "translate(25,75)")
+			}); */
 		</script>
 	</body>
 </html>
