@@ -1,0 +1,273 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8">
+		<title>D3 Demo Page</title>
+		<style type="text/css">
+			.node {
+				display: inline-block;
+			}
+			.name-text {
+				font-size: 10px;
+			}
+			text {
+				font-size: 8px;
+			}
+			#overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: #000;
+				filter:alpha(opacity=50);
+				-moz-opacity:0.5;
+				-khtml-opacity: 0.5;
+				opacity: 0.75;
+				z-index: 10000;
+			}
+			#overlay label {
+				width: 30%;
+				display: inline-block;
+				font-size: 18px;
+			}
+			.container {
+				color: #fff !important;
+			    width: 20%;
+				border: 1px solid #fff;
+				padding: 15px;
+				position: absolute;
+				top: 150px;
+				left: 450px;
+			}
+			.node-input {
+				margin: 10px 5px;
+			}
+			#node-add {
+				display: block;
+				margin: 0 auto;
+			}
+			.add-link {
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<h3>Sample Family Tree</h3>
+		<div class="svg-container"></div>
+		<script type="text/javascript" src="d3.min.js"></script>
+		<script type="text/javascript" src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script type="text/javascript">
+			var w = 900,
+				h = 900,
+				c = 0;
+			var data = {
+				"name": "William",
+				"gender": "m",
+				"life": "1900-1980"
+			};
+			drawTree(data);
+			function drawTree(data){
+			c++;
+			var tree = d3.layout.tree().size([700, 400]);
+			var nodes = tree.nodes(data);
+			var links = tree.links(nodes);
+				
+			var svgcon = d3.select(".svg-container").append("svg")
+					.attr("preserveAspectRatio", "xMinYMin meet")
+					.attr("viewBox", "0 0 "+w+" "+h)
+					.classed("svg-content-responsive", true);
+			
+			svgcon.selectAll(".link-s")
+			.data(links)
+			.enter()
+			.append("line")
+			.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+			.attr("x2", function(d) { return (d.source.x); })
+			.attr("y2", function(d) { return (d.source.y)+30; })
+			.classed("link-s", true)
+			.attr("stroke", "#777")
+			.attr("transform", "translate(40, 80)");
+			
+			svgcon.selectAll(".link")
+			.data(links)
+			.enter()
+			.append("line")
+			.attr("x1", function(d) { return (d.source.x); })
+			.attr("y1", function(d) { return (d.source.y)+30; })
+			.attr("x2", function(d) { return d.target.x; })
+			.attr("y2", function(d) { return d.target.y; })
+			.classed("link", true)
+			.attr("stroke", "#777")
+			.attr("transform", "translate(40, 80)");
+			
+			var node = svgcon.selectAll(".nodes")
+						.data(nodes)
+						.enter()
+						.append("g")
+						.classed("node", true)
+						.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
+							
+			node.append("rect")
+			.attr("width", 50)
+			.attr("height", 75)
+			.attr("x", 20)
+			.attr("y", 20)
+			.attr("fill", "#eeebe4");
+			
+			node.append("svg:image")
+			.attr('x', 30)
+			.attr('y', 25)
+			.attr('width', 30)
+			.attr('height', 30)
+			.attr("xlink:href", function(d) {
+				if(d.gender == "m") 
+					return "icon_male.png";
+				else return "icon_female.png";
+			});
+			
+			node.append("text")
+			.text(function(d) { return d.name;})
+			.attr("transform", "translate(25,65)")
+			.classed("name-text", true);
+			
+			node.append("text")
+			.text(function(d) { return d.life;})
+			.attr("transform", "translate(25,75)");
+			
+			node.append("text")
+			.text("Add + ")
+			.attr("transform", "translate(25,90)")
+			.attr("id", c)
+			.classed("add-link", true)
+			.on("click", function(d) { //alert($(this).attr("id"));
+				var overlay = $('<div id="overlay"><div class="container"><h2 align = "center"></h2><div class="node-input"><label for="node-name">Name: </label><input type="text" id = "node-name"/></div><div class="node-input"><label for="node-life">Life: </label><input type="text" id = "node-life"/></div><div class="node-input"><label for="node-gender">Gender: </label><input type="radio" name = "node-gender" id = "node-male" value = "m"/>Male<input type="radio" name = "node-gender" id = "node-female" value = "f"/>Female</div><div class="node-input"><input type="submit" id = "node-add"/></div></div></div>');
+				
+				$("body").append(overlay);
+				
+				$("#overlay h2").text("Add Child to " + d.name);
+				
+				$('#overlay').on('click',function() {
+					$('#overlay, .container').remove();
+				});
+				
+				$('.container').on('click',function(e) {
+					e.stopPropagation();
+				});
+				
+				$("#node-add").on("click", function() {
+					//console.log(d);
+					var name = $("#node-name").val();
+					var life = $("#node-life").val();
+					var gen = $(".node-input input[type='radio']:checked").val();
+					//var arr = data.toArray();
+					
+					if(typeof data.children == "undefined"){
+						data.children = [];
+					}
+					data.children.push({ "name": name, "life": life, "gender": gen});
+					console.log(data);
+					$('.svg-container').empty();
+					drawTree(data);
+					//console.log("asd" +JSON.parse(JSON.stringify(data)));
+				})
+				
+				console.log(d);
+			});
+		}	
+			/*d3.json("family.json", function(data) {
+				var nodes = tree.nodes(data);
+				var links = tree.links(nodes);
+				
+				var svgcon = d3.select(".svg-container").append("svg")
+						.attr("preserveAspectRatio", "xMinYMin meet")
+						.attr("viewBox", "0 0 "+w+" "+h)
+						.classed("svg-content-responsive", true);
+				
+				svgcon.selectAll(".link-s")
+				.data(links)
+				.enter()
+				.append("line")
+				.attr("x1", function(d) { return d.source.x; })
+				.attr("y1", function(d) { return d.source.y; })
+				.attr("x2", function(d) { return (d.source.x); })
+				.attr("y2", function(d) { return (d.source.y)+30; })
+				.classed("link-s", true)
+				.attr("stroke", "#777")
+				.attr("transform", "translate(40, 80)");
+				
+				svgcon.selectAll(".link")
+				.data(links)
+				.enter()
+				.append("line")
+				.attr("x1", function(d) { return (d.source.x); })
+				.attr("y1", function(d) { return (d.source.y)+30; })
+				.attr("x2", function(d) { return d.target.x; })
+				.attr("y2", function(d) { return d.target.y; })
+				.classed("link", true)
+				.attr("stroke", "#777")
+				.attr("transform", "translate(40, 80)");
+				
+				var node = svgcon.selectAll(".nodes")
+							.data(nodes)
+							.enter()
+							.append("g")
+							.classed("node", true)
+							.attr("transform", function (d) { return "translate(" + d.x + ", " + d.y + ")"});
+								
+				node.append("rect")
+				.attr("width", 50)
+				.attr("height", 60)
+				.attr("x", 20)
+				.attr("y", 20)
+				.attr("fill", "#eeebe4");
+				
+				node.on("click", function(d) {
+					var overlay = $('<div id="overlay"><div class="container"><h2 align = "center"></h2><div class="node-input"><label for="node-name">Name: </label><input type="text" id = "node-name"/></div><div class="node-input"><label for="node-life">Life: </label><input type="text" id = "node-life"/></div><div class="node-input"><label for="node-gender">Gender: </label><input type="radio" name = "node-gender" id = "node-male" value = "m"/>Male<input type="radio" name = "node-gender" id = "node-female" value = "f"/>Female</div><div class="node-input"><input type="submit" id = "node-add"/></div></div></div>');
+					
+					$("body").append(overlay);
+					
+					$("#overlay h2").text("Add Child to " + d.name);
+					
+					$('#overlay').on('click',function() {
+						$('#overlay, .container').remove();
+					});
+					
+					$('.container').on('click',function(e) {
+						e.stopPropagation();
+					});
+					
+					$("#node-add").on("click", function() {
+						
+					
+					})
+					
+					console.log(d);
+				})
+				
+										
+				
+				node.append("svg:image")
+				.attr('x', 30)
+				.attr('y', 25)
+				.attr('width', 30)
+				.attr('height', 30)
+				.attr("xlink:href", function(d) {
+					if(d.gender == "m") 
+						return "icon_male.png";
+					else return "icon_female.png";
+				});
+				
+				node.append("text")
+				.text(function(d) { return d.name;})
+				.attr("transform", "translate(25,65)")
+				.classed("name-text", true);
+				
+				node.append("text")
+				.text(function(d) { return d.life;})
+				.attr("transform", "translate(25,75)")
+			}); */
+		</script>
+	</body>
+</html>
